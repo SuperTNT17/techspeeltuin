@@ -1,10 +1,11 @@
 #include <SevSeg.h>
+#include <DS3231.h> // Include the DS3231 library
 
 int pinA = 11;
 int pinB = 7;
 int pinC = 4;
 int pinD = 2;
-int pinE = 1;
+int pinE = A0;
 int pinF = 10;
 int pinG = 5;
 int pinDP = 3;
@@ -12,6 +13,8 @@ int D1 = 12;
 int D2 = 9;
 int D3 = 8;
 int D4 = 6;
+
+DS3231 rtc(SDA, SCL); // Create an RTC object with default I2C pins
 
 //defining the notes with freq. Code looks much similar to one on internet, but its much more optimized //and tested for better sound quality diagram and code at: https://electroinvention.co.in
 #define C 2100
@@ -25,6 +28,16 @@ int D4 = 6;
  
 // Use PWM PINs for the Speaker output (We use D10 here )
 int speakerOut = 13;
+
+// Knoppen voor het aanpassen van de alarmtijd
+const int hourButtonPin = A2;   // Knop voor uren
+const int minuteButtonPin = A3; // Knop voor minuten
+
+int alarmHour;
+int alarmMinute;
+
+bool showAlarmTime = false;
+
 
 void setup() {  //set all segments & digits as outputs
   pinMode(pinA, OUTPUT);
@@ -41,6 +54,19 @@ void setup() {  //set all segments & digits as outputs
   pinMode(D4, OUTPUT);
 
   pinMode(speakerOut, OUTPUT);
+
+  // Setup Serial connection
+  Serial.begin(115200);
+  // Uncomment the next line if you are using an Arduino Leonardo
+  //while (!Serial) {}
+  
+  // Initialize the rtc object
+  rtc.begin();
+  
+  // The following lines can be uncommented to set the date and time
+  //rtc.setDOW(WEDNESDAY);     // Set Day-of-Week to SUNDAY
+  //rtc.setTime(12, 33, 10);     // Set the time to 14:39:30 (24hr format)
+  //rtc.setDate(15, 1, 2025);   // Set the date to December 12st, 2024
 }
 
 // melody and time delay code
@@ -95,41 +121,114 @@ void playTone() {
 
 void loop() {
 
-  // all4Digits();zero();delay(500);
-  // digit3();one();delay(500);
-  // digit3();two();delay(500);
-  // digit3();three();delay(500);
-  // digit3();four();delay(500);
-  // digit3();five();delay(500);
-  // digit3();six();delay(500);
-  // digit3();seven();delay(500);
-  // digit3();eight();delay(500);
-  // digit3();nine();delay(500);
-
-  digit1();
-  one();
-  delay(500);
-  digit2();
-  two();
-  delay(500);
-  digit3();
-  three();
-  delay(500);
-  digit4();
-  four();
-  delay(500);
-
-  for (int i = 0; i < MAX_COUNT; i++) {
-    tone_ = melody[i];
-    beat = 60; //beat to 60
+  // for (int i = 0; i < MAX_COUNT; i++) {
+  //   tone_ = melody[i];
+  //   beat = 60; //beat to 60
  
-    duration = beat * tempo;  //setting up timing
+  //   duration = beat * tempo;  //setting up timing
  
-    playTone();
-    // adding delay pause between notes
-    delayMicroseconds(pause);
+  //   playTone();
+  //   // adding delay pause between notes
+  //   delayMicroseconds(pause);
+  // }
+
+  // Tijd uitlezen van RTC
+  Serial.println(rtc.getTimeStr());
+  // Tijd uitlezen van de RTC
+  String tijd = rtc.getTimeStr();  // Tijd als "HH:MM:SS"
+
+  // Uren en minuten splitsen
+  int uren = tijd.substring(0, 2).toInt();      // Uren: "HH"
+  int minuten = tijd.substring(3, 5).toInt();   // Minuten: "MM"
+
+  // Splits uren en minuten in tientallen en eenheden
+  int urenTiental = uren / 10;
+  int urenEenheid = uren % 10;
+  int minutenTiental = minuten / 10;
+  int minutenEenheid = minuten % 10;
+
+  // Controleer knop voor uur aanpassen
+  if (digitalRead(hourButtonPin) == HIGH) {
+    alarmHour = (alarmHour + 1) % 24; // Uur aanpassen
+    showAlarmTime = true;
+    Serial.println(alarmHour);
+    Serial.println(alarmMinute);
+    delay(200); // Debouncing
   }
+
+  // Controleer knop voor minuut aanpassen
+  if (digitalRead(minuteButtonPin) == HIGH) {
+    alarmMinute = (alarmMinute + 1) % 60; // Minuut aanpassen
+    showAlarmTime = true;
+    Serial.println(alarmHour);
+    Serial.println(alarmMinute);
+    delay(200); // Debouncing
+  }
+
+  int lastButtonPress;
+  int displayTimeout;
+
+  // Controleer of alarmtijd tijdelijk moet worden weergegeven
+  if (millis() - lastButtonPress < displayTimeout) {
+    showAlarmTime = true;
+  }
+
+  if(showAlarmTime){
+    int alarmHourTiental = alarmHour / 10;
+    int alarmHourEenheid = alarmHour % 10;
+    int alarmMinuteTiental = alarmMinute / 10;
+    int alarmMinuteEenheid = alarmMinute % 10;
+    
+    for (int i = 0; i < 50; i++) {  // Herhaal om het stabiel te laten lijken
+      toonCijfer(alarmHourTiental, D1);
+      toonCijfer(alarmHourEenheid, D2);
+      toonCijfer(alarmMinuteTiental, D3);
+      toonCijfer(alarmMinuteTiental, D4);
+    }
+  }
+
+  // Toon alle cijfers snel achter elkaar voor multiplexing
+  if(!showAlarmTime){
+    for (int i = 0; i < 50; i++) {  // Herhaal om het stabiel te laten lijken
+      toonCijfer(urenTiental, D1);
+      toonCijfer(urenEenheid, D2);
+      toonCijfer(minutenTiental, D3);
+      toonCijfer(minutenEenheid, D4);
+    }
+  }
+  
+  showAlarmTime = false;
+
 }
+
+void toonCijfer(int cijfer, int digit) {
+  // Zet alle digits uit
+  digitalWrite(D1, HIGH);
+  digitalWrite(D2, HIGH);
+  digitalWrite(D3, HIGH);
+  digitalWrite(D4, HIGH);
+  
+  // Zet de juiste digit aan
+  digitalWrite(digit, LOW);
+
+  // Schakel de juiste segmenten in voor het cijfer
+  switch (cijfer) {
+    case 0: zero(); break;
+    case 1: one(); break;
+    case 2: two(); break;
+    case 3: three(); break;
+    case 4: four(); break;
+    case 5: five(); break;
+    case 6: six(); break;
+    case 7: seven(); break;
+    case 8: eight(); break;
+    case 9: nine(); break;
+  }
+
+  delay(2);  // Korte weergave voor multiplexing
+  turnOffAllSegments();  // Zet segmenten uit voor de volgende cyclus
+}
+
 
 
 //functions representing numbers 0-9
