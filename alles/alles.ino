@@ -33,6 +33,7 @@ int speakerOut = 13;
 const int hourButtonPin = A2;   // Knop voor uren
 const int minuteButtonPin = A3; // Knop voor minuten
 
+
 int alarmHour;
 int alarmMinute;
 
@@ -53,6 +54,8 @@ void setup() {  //set all segments & digits as outputs
   pinMode(D3, OUTPUT);
   pinMode(D4, OUTPUT);
 
+  pinMode(hourButtonPin, INPUT);
+  pinMode(minuteButtonPin, INPUT);
   pinMode(speakerOut, OUTPUT);
 
   // Setup Serial connection
@@ -64,9 +67,9 @@ void setup() {  //set all segments & digits as outputs
   rtc.begin();
   
   // The following lines can be uncommented to set the date and time
-  //rtc.setDOW(WEDNESDAY);     // Set Day-of-Week to SUNDAY
-  //rtc.setTime(12, 33, 10);     // Set the time to 14:39:30 (24hr format)
-  //rtc.setDate(15, 1, 2025);   // Set the date to December 12st, 2024
+  // rtc.setDOW(FRIDAY);     // Set Day-of-Week to SUNDAY
+  // rtc.setTime(13, 51, 0);     // Set the time to 14:39:30 (24hr format)
+  // rtc.setDate(31, 1, 2025);   // Set the date to December 12st, 2024
 }
 
 // melody and time delay code
@@ -163,14 +166,6 @@ void loop() {
     Serial.println(alarmHour);
     Serial.println(alarmMinute);
     delay(200); // Debouncing
-  }
-
-  int lastButtonPress;
-  int displayTimeout;
-
-  // Controleer of alarmtijd tijdelijk moet worden weergegeven
-  if (millis() - lastButtonPress < displayTimeout) {
-    showAlarmTime = true;
   }
 
   if(showAlarmTime){
