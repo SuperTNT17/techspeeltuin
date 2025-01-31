@@ -178,7 +178,7 @@ void loop() {
       toonCijfer(alarmHourTiental, D1);
       toonCijfer(alarmHourEenheid, D2);
       toonCijfer(alarmMinuteTiental, D3);
-      toonCijfer(alarmMinuteTiental, D4);
+      toonCijfer(alarmMinuteEenheid, D4);
     }
   }
 
