@@ -124,17 +124,6 @@ void playTone() {
 
 void loop() {
 
-  // for (int i = 0; i < MAX_COUNT; i++) {
-  //   tone_ = melody[i];
-  //   beat = 60; //beat to 60
- 
-  //   duration = beat * tempo;  //setting up timing
- 
-  //   playTone();
-  //   // adding delay pause between notes
-  //   delayMicroseconds(pause);
-  // }
-
   // Tijd uitlezen van RTC
   Serial.println(rtc.getTimeStr());
   // Tijd uitlezen van de RTC
@@ -189,6 +178,17 @@ void loop() {
       toonCijfer(urenEenheid, D2);
       toonCijfer(minutenTiental, D3);
       toonCijfer(minutenEenheid, D4);
+    }
+  }
+  
+  if(!showAlarmTime && uren == alarmHour && minuten == alarmMinute){
+    for (int i = 0; i < MAX_COUNT; i++) {
+    tone_ = melody[i];
+    beat = 60; //beat to 60
+    duration = beat * tempo;  //setting up timing
+    playTone();
+    // adding delay pause between notes
+    delayMicroseconds(pause);
     }
   }
   
